@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>波動雷達</title>
+<meta name="description" content="台股波動雷達（實測中）">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="波動雷達">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1419">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{
+  --bg:#f5f6f8; --card:#ffffff; --text:#14171a; --muted:#5b6670; --line:#e3e6ea;
+  --accent:#d9480f; --accent-soft:#fff0e8; --warn-bg:#fff8e1; --warn-text:#7a5300; --warn-line:#f2d48a;
+  --ok:#2b8a3e; --bad:#c92a2a; --bar:#f08c00; --chip:#eef1f4;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1419; --card:#182028; --text:#e8ecef; --muted:#93a1ad; --line:#26313b;
+    --accent:#ff8a4c; --accent-soft:#3a2418; --warn-bg:#2e2510; --warn-text:#f5d38a; --warn-line:#5c4a1e;
+    --ok:#51cf66; --bad:#ff6b6b; --bar:#ffa94d; --chip:#222c35;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;font-size:16px}
+body{padding:env(safe-area-inset-top) 0 calc(64px + env(safe-area-inset-bottom))}
+header{padding:14px 16px 8px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h1{font-size:22px;margin:0}
+.badge{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:3px 8px;border-radius:99px}
+.sub{color:var(--muted);font-size:13px;width:100%}
+.warn{margin:4px 16px 10px;padding:10px 12px;border-radius:10px;background:var(--warn-bg);color:var(--warn-text);
+  border:1px solid var(--warn-line);font-size:13px;line-height:1.5}
+.card{background:var(--card);margin:0 16px 12px;border-radius:14px;border:1px solid var(--line);overflow:hidden}
+.card h2{font-size:15px;margin:0;padding:12px 14px 4px}
+.card .body{padding:4px 14px 12px;font-size:14px;color:var(--muted);line-height:1.6}
+.stats{display:flex;gap:8px;padding:6px 14px 12px}
+.stat{flex:1;background:var(--chip);border-radius:10px;padding:8px 10px}
+.stat b{display:block;font-size:20px;color:var(--text)}
+.stat span{font-size:12px;color:var(--muted)}
+.progress{height:6px;background:var(--chip);border-radius:6px;margin:4px 14px 12px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent)}
+.row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line)}
+.row:first-child{border-top:none}
+.rk{width:26px;text-align:right;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.nm{flex:1;min-width:0}
+.nm b{font-size:16px}
+.nm small{color:var(--muted);margin-left:6px;font-size:12px}
+.pb{width:96px}
+.pb .v{font-size:15px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.pb .t{height:4px;background:var(--chip);border-radius:4px;margin-top:4px;overflow:hidden}
+.pb .t i{display:block;height:100%;background:var(--bar)}
+.res{font-size:12px;font-weight:600;padding:2px 7px;border-radius:99px;white-space:nowrap}
+.res.y{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.res.n{color:var(--muted);background:var(--chip)}
+.res.p{color:var(--muted)}
+input[type=search]{width:calc(100% - 32px);margin:0 16px 12px;padding:12px 14px;font-size:16px;border-radius:12px;
+  border:1px solid var(--line);background:var(--card);color:var(--text);outline:none}
+.day{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-top:1px solid var(--line);cursor:pointer}
+.day:first-child{border-top:none}
+.day .d{font-weight:600}
+.day .h{font-size:13px;color:var(--muted);text-align:right}
+.empty{padding:18px 14px;color:var(--muted);font-size:14px;text-align:center}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:none;background:none;color:var(--muted);font-size:13px;padding:10px 0 12px;font-family:inherit}
+nav button.on{color:var(--accent);font-weight:600}
+nav button .ic{display:block;font-size:20px;line-height:1.2}
+.back{border:none;background:none;color:var(--accent);font-size:15px;padding:0 16px 10px;font-family:inherit}
+.hidden{display:none}
+.foot{color:var(--muted);font-size:12px;text-align:center;padding:4px 16px 16px}
+.refresh{border:none;background:none;color:var(--accent);font-size:13px;font-family:inherit;padding:0;margin-left:auto}
+</style>
+</head>
+<body>
+<header>
+  <h1>波動雷達</h1><span class="badge">實測中</span>
+  <button class="refresh" id="refresh">重新整理</button>
+  <div class="sub" id="sub">載入中…</div>
+</header>
+<div class="warn" id="warn">實測中：此模型尚未通過驗證，只預測「未來 5 個交易日會不會大漲或大跌 8% 以上」，不預測方向，請勿作為買賣依據。</div>
+
+<main id="v-today"></main>
+<main id="v-search" class="hidden">
+  <input type="search" id="q" placeholder="輸入代號或名稱，例如 2330 或 台積電" autocomplete="off">
+  <div class="card" id="qres"><div class="empty">輸入你持有或關注的股票，看它的大波動機率與排名</div></div>
+</main>
+<main id="v-hist" class="hidden"></main>
+
+<nav>
+  <button data-v="today" class="on"><span class="ic">📡</span>今日名單</button>
+  <button data-v="search"><span class="ic">🔍</span>查股票</button>
+  <button data-v="hist"><span class="ic">📊</span>實測成績</button>
+</nav>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pct = (x) => x == null ? "—" : Math.round(x * 100) + "%";
+const MKT = {TWSE: "上市", TPEx: "上櫃"};
+let IDX = null, LATEST = null;
+
+async function getJSON(path) {
+  const r = await fetch(`data/${path}?t=${Date.now()}`, {cache: "no-store"});
+  if (!r.ok) throw new Error(`讀取 ${path} 失敗（HTTP ${r.status}）`);
+  return r.json();
+}
+
+function outcome(s, scored) {
+  if (!scored || s.y == null) return `<span class="res p">待驗證</span>`;
+  if (s.y === 1) return `<span class="res y">${s.dn === 1 ? "有大跌" : "有大漲"}</span>`;
+  return `<span class="res n">沒大動</span>`;
+}
+
+function row(s, scored) {
+  return `<div class="row"><div class="rk">${s.r}</div>
+    <div class="nm"><b>${esc(s.id)} ${esc(s.n)}</b><small>${MKT[s.m] || esc(s.m)}</small></div>
+    ${scored ? outcome(s, true) : ""}
+    <div class="pb"><div class="v">${pct(s.p)}</div><div class="t"><i style="width:${Math.round((s.p || 0) * 100)}%"></i></div></div></div>`;
+}
+
+function scoreCard() {
+  const n = IDX.checkpoints, need = IDX.need;
+  const scoredDays = IDX.days.filter((d) => d.scored);
+  const stats = IDX.hit_top == null ? `<div class="body">還沒有可以對答案的名單：每份名單要等 5 個交易日後才知道準不準。</div>` :
+    `<div class="stats"><div class="stat"><b>${pct(IDX.hit_top)}</b><span>前 10 名真的大波動</span></div>
+      <div class="stat"><b>${pct(IDX.hit_all)}</b><span>全市場平均</span></div></div>`;
+  return `<div class="card"><h2>實測進度 ${n} / ${need} 次檢查</h2>
+    <div class="progress"><i style="width:${Math.min(100, n / need * 100)}%"></i></div>${stats}
+    <div class="body">${esc(IDX.verdict)}${scoredDays.length ? `（已對答案 ${scoredDays.length} 天）` : ""}</div></div>`;
+}
+
+function renderToday() {
+  const d = LATEST;
+  const top = d.stocks.slice(0, 30);
+  $("#v-today").innerHTML = `
+    <div class="card"><h2>${esc(d.date)} 收盤後 → 未來 5 個交易日</h2>
+      <div class="body">全市場平均大波動機率 ${pct(d.market_avg)}。下列為機率最高的 30 檔（共 ${d.stocks.length} 檔）。</div></div>
+    <div class="card">${top.map((s) => row(s, d.scored)).join("")}</div>
+    ${scoreCard()}
+    <div class="foot">大波動＝5 個交易日內最高漲 ≥ 8% 或最低跌 ≥ 8%（以收盤價為基準）</div>`;
+}
+
+function renderSearch() {
+  const q = $("#q").value.trim();
+  if (!q) { $("#qres").innerHTML = `<div class="empty">輸入你持有或關注的股票，看它的大波動機率與排名</div>`; return; }
+  const hits = LATEST.stocks.filter((s) => s.id.startsWith(q) || (s.n || "").includes(q)).slice(0, 30);
+  $("#qres").innerHTML = hits.length ? hits.map((s) => row(s, LATEST.scored)).join("") +
+    `<div class="empty">排名為 ${LATEST.stocks.length} 檔中的名次；全市場平均 ${pct(LATEST.market_avg)}</div>`
+    : `<div class="empty">找不到「${esc(q)}」。名單只含上市櫃普通股，且排除成交太少的股票。</div>`;
+}
+
+function renderHist() {
+  const days = IDX.days;
+  $("#v-hist").innerHTML = scoreCard() + `<div class="card">${days.map((d) => `
+    <div class="day" data-d="${esc(d.date)}"><div><div class="d">${esc(d.date)}</div>
+      <div class="h" style="text-align:left">全市場平均機率 ${pct(d.market_avg)}</div></div>
+      <div class="h">${d.scored ? `前10名 ${pct(d.top10_hit)} 大波動<br>全市場 ${pct(d.all_hit)}` : "待驗證（需 5 個交易日）"}</div></div>`).join("")}</div>
+    <div class="foot">點日期可看當天名單與事後結果</div>`;
+  document.querySelectorAll(".day").forEach((el) => el.onclick = () => openDay(el.dataset.d));
+}
+
+async function openDay(date) {
+  const d = date === LATEST.date ? LATEST : await getJSON(`${date}.json`);
+  $("#v-hist").innerHTML = `<button class="back" id="back">‹ 返回</button>
+    <div class="card"><h2>${esc(d.date)} 的名單</h2><div class="body">${d.scored
+      ? `前 10 名有 ${pct(d.top10_hit)} 真的大波動，全市場是 ${pct(d.all_hit)}。` : "還沒滿 5 個交易日，尚不能對答案。"}</div></div>
+    <div class="card">${d.stocks.slice(0, 30).map((s) => row(s, d.scored)).join("")}</div>`;
+  $("#back").onclick = renderHist;
+  window.scrollTo(0, 0);
+}
+
+function show(v) {
+  for (const k of ["today", "search", "hist"]) $(`#v-${k}`).classList.toggle("hidden", k !== v);
+  document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("on", b.dataset.v === v));
+  if (v === "hist") renderHist();
+  window.scrollTo(0, 0);
+}
+
+async function load() {
+  $("#sub").textContent = "載入中…";
+  try {
+    IDX = await getJSON("index.json");
+    LATEST = await getJSON(`${IDX.latest}.json`);
+    $("#sub").textContent = `資料日 ${IDX.latest} ・ 更新於 ${IDX.updated.replace("T", " ")}`;
+    if (IDX.disclaimer) $("#warn").textContent = IDX.disclaimer;
+    renderToday(); renderSearch();
+    if (!$("#v-hist").classList.contains("hidden")) renderHist();
+  } catch (e) {
+    $("#sub").textContent = "載入失敗";
+    $("#v-today").innerHTML = `<div class="card"><div class="empty">${esc(e.message)}<br>請確認網路後按「重新整理」。</div></div>`;
+  }
+}
+
+document.querySelectorAll("nav button").forEach((b) => b.onclick = () => show(b.dataset.v));
+$("#q").addEventListener("input", renderSearch);
+$("#refresh").onclick = load;
+load();
+</script>
+</body>
+</html>
